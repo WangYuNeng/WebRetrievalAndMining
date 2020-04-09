@@ -11,25 +11,32 @@ class Query:
         pass
 
     def to_term_vec(self, vocab_to_idx, term_to_idx):
-        self.term_vec = np.zeros(len(vocab_to_idx), dtype=int)
+        self.term_vec = dict()
         for key in self.attrib_:
             if key == 'number':
                 continue
             text = self.attrib_[key]
 
             # consider chinese word, bigram only
-            prev_word = None
+            prev_idx = None
             for word in text:
-                if word in QUERY_STOP_WORDS:
-                    prev_word = None
+                if word in QUERY_STOP_WORDS or not (word in vocab_to_idx):
+                    prev_idx = None
                     continue
-                if prev_word != None:
-                    bigram = prev_word + word
-                    if bigram in vocab_to_idx:
-                        self.term_vec[vocab_to_idx[bigram]] += 1
-                if word in vocab_to_idx:
-                    self.term_vec[vocab_to_idx[word]] += 1
-                prev_word = word
+                idx = vocab_to_idx[word]
+                if prev_idx != None:
+                    bigram = (prev_idx, idx)
+                    if bigram in term_to_idx:
+                        if term_to_idx[bigram] in self.term_vec:
+                            self.term_vec[term_to_idx[bigram]] += 1
+                        else:
+                            self.term_vec[term_to_idx[bigram]] = 1
+                if (idx, -1) in term_to_idx:
+                    if term_to_idx[(idx, -1)] in self.term_vec:
+                        self.term_vec[term_to_idx[(idx, -1)]] += 1
+                    else:
+                        self.term_vec[term_to_idx[(idx, -1)]] = 1
+                prev_idx = idx
 
     @staticmethod
     def from_xml(file_name):
