@@ -18,15 +18,13 @@ if __name__ == "__main__":
     for true, retrieved in zip(true_docs, test_docs):
         AP = 0
         precision = 0
-        recall = 0
         true_pos = 0
-        true_docs = {doc for doc in true}
+        true_dict = {doc for doc in true}
         for i, doc in enumerate(retrieved):
-            if doc in true_docs:
+            if doc in true_dict:
                 true_pos += 1
-            precision = true_pos / (i+1)
-            d_recall = true_pos / len(true) - recall
-            recall = true_pos / len(true)
-            AP += precision * d_recall
+                precision = true_pos / (i+1)
+                AP += precision / len(true)
+        print(AP, len(true_docs))
         MAP += AP / len(true_docs)
     print("MAP = ", MAP)

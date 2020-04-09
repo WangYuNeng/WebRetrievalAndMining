@@ -13,11 +13,14 @@ class Model:
     def retrieve(self, query):
         scores = np.array(self.BM25(query))
         doc_rank = np.flip(np.argsort(scores))
-        top_k = self._cluster(doc_rank[:100], scores)
-        return [self.doc_names[idx] for idx in top_k]
+        pseudo_relevance = self._cluster(doc_rank[:100], scores)
+        query = self.feedback(query, pseudo_relevance)
+        scores = np.array(self.BM25(query))
+        doc_rank = np.flip(np.argsort(scores))
+        return [self.doc_names[idx] for idx in doc_rank[:100]]
 
 
-    def BM25(self, query, k1=1.5, b=0.75, k3=20):
+    def BM25(self, query, k1=1.5, b=0.75, k3=100):
         N = len(self.doc_vecs)
         avdl = np.average(self.doc_lengths)
         scores = [0] * N
@@ -38,13 +41,24 @@ class Model:
                     square_query += QTF ** 2
                     dot_product += IDF * TF * QTF
             if square_query != 0 and square_doc != 0:
-                scores[d_idx] = dot_product / sqrt(square_query * square_doc)
+                scores[d_idx] = dot_product #/ sqrt(square_query * square_doc)
         return scores
+
+    def feedback(self, query, relevant_docs, alpha=0.2, beta=0.8):
+        query.term_vec = {key: alpha * query.term_vec[key] for key in query.term_vec}
+        for doc_id in relevant_docs:
+            doc_vec = self.doc_vecs[doc_id]
+            for term in doc_vec:
+                if term in query.term_vec:
+                    query.term_vec[term] += beta / len(relevant_docs) * doc_vec[term]
+                else:
+                    query.term_vec[term] = beta / len(relevant_docs) * doc_vec[term]
+        return query
 
     def _cluster(self, index, score):
         max_iter = 100
-        c1 = score[index[len(index) // 4]]
-        c2 = score[index[len(index) // 2]]
+        c1 = score[index[len(index) // 3]]
+        c2 = score[index[len(index) // 3 * 2]]
         for it in range(max_iter):
             sep_i = 0
 
