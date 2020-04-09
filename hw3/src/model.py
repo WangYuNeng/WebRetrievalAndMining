@@ -7,14 +7,14 @@ class Model:
 
     def __init__(self, inverted_file, vocab_file, doc_file_list):
         self.vocab_to_idx, self.idx_to_vocab = self.build_vocab(vocab_file)
-        self.doc_vecs, self.doc_lengths, self.doc_names, self.term_to_tidx, self.tidx_to_docfreq = self.build_td_matrix(inverted_file, doc_file_list)
+        self.doc_vecs, self.doc_lengths, self.doc_names, self.term_to_tidx, self.tidx_to_docfreq, self.tidx_to_term = self.build_td_matrix(inverted_file, doc_file_list)
         pass
     
     def retrieve(self, query):
         scores = np.array(self.BM25(query))
         doc_rank = np.flip(np.argsort(scores))
-        pseudo_relevance = self._cluster(doc_rank[:100], scores)
-        query = self.feedback(query, pseudo_relevance)
+        # pseudo_relevance = self._cluster(doc_rank[:100], scores)
+        query = self.feedback(query, doc_rank[:10])
         scores = np.array(self.BM25(query))
         doc_rank = np.flip(np.argsort(scores))
         return [self.doc_names[idx] for idx in doc_rank[:100]]
@@ -36,7 +36,7 @@ class Model:
                     dl = self.doc_lengths[d_idx]
                     IDF = log((N - df +0.5) / (df + 0.5))
                     TF = (k1 + 1) * tf / (k1 * (1 - b + b * dl / avdl) + tf) 
-                    QTF = (k3 + 1) * tf / (k3 + qtf)
+                    QTF = (k3 + 1) * qtf / (k3 + qtf)
                     square_doc += (IDF * TF) ** 2
                     square_query += QTF ** 2
                     dot_product += IDF * TF * QTF
@@ -82,7 +82,7 @@ class Model:
         with open(file_name, "r", encoding='utf8') as f:
             for idx, vocab in enumerate(f.readlines()):
                 vocab_to_idx[vocab[:-1]] = idx
-                idx_to_vocab.append(vocab)
+                idx_to_vocab.append(vocab[:-1])
         return vocab_to_idx, idx_to_vocab
 
     @staticmethod
@@ -95,6 +95,7 @@ class Model:
         doc_lengths = [0] * num_files
         term_to_tidx = dict()
         tidx_to_docfreq = list()
+        tidx_to_term = list()
         with open(inverted_file, "r", encoding='utf8') as f:
             lines = f.readlines()
             i = 0
@@ -104,6 +105,7 @@ class Model:
                 (vocab_idx1, vocab_idx2, docfreq) = (int(vocab_idx1), int(vocab_idx2), int(docfreq))
                 term_to_tidx[vocab_idx1, vocab_idx2] = term_idx
                 tidx_to_docfreq.append(int(docfreq))
+                tidx_to_term.append((vocab_idx1, vocab_idx2))
                 for j in range(docfreq):
                     i += 1 
                     line = lines[i]
@@ -115,7 +117,7 @@ class Model:
                 i += 1
                 term_idx += 1
         # print(num_terms)
-        return doc_vecs, doc_lengths, doc_names, term_to_tidx, tidx_to_docfreq
+        return doc_vecs, doc_lengths, doc_names, term_to_tidx, tidx_to_docfreq, tidx_to_term
                 
 
 
