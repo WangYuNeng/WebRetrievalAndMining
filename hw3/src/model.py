@@ -14,7 +14,7 @@ class Model:
         scores = np.array(self.BM25(query))
         doc_rank = np.flip(np.argsort(scores))
         # pseudo_relevance = self._cluster(doc_rank[:100], scores)
-        query = self.feedback(query, doc_rank[:10])
+        self.feedback(query, doc_rank[:10])
         scores = np.array(self.BM25(query))
         doc_rank = np.flip(np.argsort(scores))
         return [self.doc_names[idx] for idx in doc_rank[:100]]
@@ -25,9 +25,6 @@ class Model:
         avdl = np.average(self.doc_lengths)
         scores = [0] * N
         for d_idx, d_vec in enumerate(self.doc_vecs):
-            dot_product = 0
-            square_query = 0
-            square_doc = 0
             for t_idx in query.term_vec:
                 if t_idx in d_vec: 
                     df = self.tidx_to_docfreq[t_idx]
@@ -37,15 +34,14 @@ class Model:
                     IDF = log((N - df +0.5) / (df + 0.5))
                     TF = (k1 + 1) * tf / (k1 * (1 - b + b * dl / avdl) + tf) 
                     QTF = (k3 + 1) * qtf / (k3 + qtf)
-                    square_doc += (IDF * TF) ** 2
-                    square_query += QTF ** 2
-                    dot_product += IDF * TF * QTF
-            if square_query != 0 and square_doc != 0:
-                scores[d_idx] = dot_product #/ sqrt(square_query * square_doc)
+                    scores[d_idx] += IDF * TF * QTF
         return scores
 
     def feedback(self, query, relevant_docs, alpha=0.2, beta=0.8):
-        query.term_vec = {key: alpha * query.term_vec[key] for key in query.term_vec}
+        q_vec = query.term_vec
+        for key in q_vec:
+            q_vec[key] = alpha * q_vec[key]
+        feedback_w = beta / len(relevant_docs)
         for doc_id in relevant_docs:
             doc_vec = self.doc_vecs[doc_id]
             for term in doc_vec:
@@ -112,11 +108,10 @@ class Model:
                     [doc_id, term_freq] = line[:-1].split()
                     doc_vecs[int(doc_id)][term_idx] = int(term_freq)
                     doc_lengths[int(doc_id)] += int(term_freq)
-                if(term_idx % 1000 == 0):
-                    print("processing {} terms in {} sec".format(term_idx, time.time()-start))
                 i += 1
                 term_idx += 1
         # print(num_terms)
+        print("processing {} terms in {} sec".format(term_idx, time.time()-start))
         return doc_vecs, doc_lengths, doc_names, term_to_tidx, tidx_to_docfreq, tidx_to_term
                 
 
