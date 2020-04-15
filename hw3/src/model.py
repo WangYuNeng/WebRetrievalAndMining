@@ -11,11 +11,17 @@ class Model:
         pass
     
     def retrieve(self, query):
+        start = time.time()
         scores = np.array(self.BM25(query))
+        print("BM25(1): {} secs".format(time.time()-start))
+        start = time.time()
         doc_rank = np.flip(np.argsort(scores))
-        # pseudo_relevance = self._cluster(doc_rank[:100], scores)
+        # pseudo_relevance = self._cluster(doc_rank[:30], scores)
         query = self.feedback(query, doc_rank[:10])
+        print("Feedback: {} secs".format(time.time()-start))
+        start = time.time()
         scores = np.array(self.BM25(query))
+        print("BM25(2): {} secs".format(time.time()-start))
         doc_rank = np.flip(np.argsort(scores))
         return [self.doc_names[idx] for idx in doc_rank[:100]]
 
@@ -24,27 +30,33 @@ class Model:
         N = len(self.doc_vecs)
         avdl = np.average(self.doc_lengths)
         scores = [0] * N
+        q_vec = query.term_vec
         for d_idx, d_vec in enumerate(self.doc_vecs):
-            dot_product = 0
-            square_query = 0
-            square_doc = 0
-            for t_idx in query.term_vec:
-                if t_idx in d_vec: 
-                    df = self.tidx_to_docfreq[t_idx]
-                    tf = d_vec[t_idx]
-                    qtf = query.term_vec[t_idx]
-                    dl = self.doc_lengths[d_idx]
-                    IDF = log((N - df +0.5) / (df + 0.5))
-                    TF = (k1 + 1) * tf / (k1 * (1 - b + b * dl / avdl) + tf) 
-                    QTF = (k3 + 1) * qtf / (k3 + qtf)
-                    square_doc += (IDF * TF) ** 2
-                    square_query += QTF ** 2
-                    dot_product += IDF * TF * QTF
-            if square_query != 0 and square_doc != 0:
-                scores[d_idx] = dot_product #/ sqrt(square_query * square_doc)
+            if len(d_vec) > len(q_vec):
+                for t_idx in q_vec:
+                    if t_idx in d_vec: 
+                        df = self.tidx_to_docfreq[t_idx]
+                        tf = d_vec[t_idx]
+                        qtf = q_vec[t_idx]
+                        dl = self.doc_lengths[d_idx]
+                        IDF = log((N - df +0.5) / (df + 0.5))
+                        TF = (k1 + 1) * tf / (k1 * (1 - b + b * dl / avdl) + tf) 
+                        QTF = (k3 + 1) * qtf / (k3 + qtf)
+                        scores[d_idx] += IDF * TF * QTF
+            else:
+                for t_idx in d_vec:
+                    if t_idx in q_vec: 
+                        df = self.tidx_to_docfreq[t_idx]
+                        tf = d_vec[t_idx]
+                        qtf = q_vec[t_idx]
+                        dl = self.doc_lengths[d_idx]
+                        IDF = log((N - df +0.5) / (df + 0.5))
+                        TF = (k1 + 1) * tf / (k1 * (1 - b + b * dl / avdl) + tf) 
+                        QTF = (k3 + 1) * qtf / (k3 + qtf)
+                        scores[d_idx] += IDF * TF * QTF
         return scores
 
-    def feedback(self, query, relevant_docs, alpha=0.2, beta=0.8):
+    def feedback(self, query, relevant_docs, alpha=1, beta=1):
         query.term_vec = {key: alpha * query.term_vec[key] for key in query.term_vec}
         for doc_id in relevant_docs:
             doc_vec = self.doc_vecs[doc_id]
@@ -112,7 +124,7 @@ class Model:
                     [doc_id, term_freq] = line[:-1].split()
                     doc_vecs[int(doc_id)][term_idx] = int(term_freq)
                     doc_lengths[int(doc_id)] += int(term_freq)
-                if(term_idx % 1000 == 0):
+                if(term_idx % 100000 == 0):
                     print("processing {} terms in {} sec".format(term_idx, time.time()-start))
                 i += 1
                 term_idx += 1
