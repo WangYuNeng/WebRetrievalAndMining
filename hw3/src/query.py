@@ -10,11 +10,15 @@ class Query:
         self.term_vec = None
         pass
 
-    def to_term_vec(self, vocab_to_idx, term_to_idx):
+    def to_term_vec(self, vocab_to_idx, term_to_idx, concepts_w=1):
         self.term_vec = dict()
         for key in self.attrib_:
             if key == 'number':
                 continue
+            if key == "concepts":
+                w = concepts_w
+            else:
+                w = 1
             text = self.attrib_[key]
 
             # consider chinese word, bigram only
@@ -28,14 +32,14 @@ class Query:
                     bigram = (prev_idx, idx)
                     if bigram in term_to_idx:
                         if term_to_idx[bigram] in self.term_vec:
-                            self.term_vec[term_to_idx[bigram]] += 1
+                            self.term_vec[term_to_idx[bigram]] += w
                         else:
-                            self.term_vec[term_to_idx[bigram]] = 1
+                            self.term_vec[term_to_idx[bigram]] = w
                 if (idx, -1) in term_to_idx:
                     if term_to_idx[(idx, -1)] in self.term_vec:
-                        self.term_vec[term_to_idx[(idx, -1)]] += 1
+                        self.term_vec[term_to_idx[(idx, -1)]] += w
                     else:
-                        self.term_vec[term_to_idx[(idx, -1)]] = 1
+                        self.term_vec[term_to_idx[(idx, -1)]] = w
                 prev_idx = idx
 
     @staticmethod

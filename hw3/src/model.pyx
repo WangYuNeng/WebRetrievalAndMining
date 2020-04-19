@@ -17,19 +17,20 @@ class Model:
         avdl = np.average(self.doc_lengths)
         pass
     
-    def retrieve(self, query):
+    def retrieve(self, query, r=False, int feedback_size=5, float k1=1.5, float b=0.75, float k3=100, alpha=1, beta=1):
         start = time.time()
-        scores = np.array(self.BM25(query))
+        scores = np.array(self.BM25(query, k1, b, k3))
         print("BM25(1): {} secs".format(time.time()-start))
         start = time.time()
         doc_rank = np.flip(np.argsort(scores))
         # pseudo_relevance = self._cluster(doc_rank[:30], scores)
-        query = self.feedback(query, doc_rank[:10])
-        print("Feedback: {} secs".format(time.time()-start))
-        start = time.time()
-        scores = np.array(self.BM25(query))
-        print("BM25(2): {} secs".format(time.time()-start))
-        doc_rank = np.flip(np.argsort(scores))
+        if (r):
+            query = self.feedback(query, doc_rank[:feedback_size], alpha, beta)
+            print("Feedback: {} secs".format(time.time()-start))
+            start = time.time()
+            scores = np.array(self.BM25(query, k1, b, k3))
+            print("BM25(2): {} secs".format(time.time()-start))
+            doc_rank = np.flip(np.argsort(scores))
         return [self.doc_names[idx] for idx in doc_rank[:100]]
 
 
