@@ -1,9 +1,10 @@
 from model import Model
 from query import Query
 import argparse
+import time
 
 if __name__ == "__main__":
-
+    start = time.time()
     parser = argparse.ArgumentParser()
    
     parser.add_argument('-r', action="store_true")
@@ -11,13 +12,13 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--output', required=True)
     parser.add_argument('-m', '--model_dir', required=True)
     parser.add_argument('-d', '--NTCIR_dir', required=True)
-    parser.add_argument('-f', type=int, default=5)
+    parser.add_argument('-f', type=int, default=1)
     parser.add_argument('-k1', type=float, default=1.5)
     parser.add_argument('-b', type=float, default=0.75)
-    parser.add_argument('-k3', type=float, default=100)
-    parser.add_argument('-alpha', type=float, default=1)
-    parser.add_argument('-beta', type=float, default=1)
-    parser.add_argument('-concepts_w', type=float, default=1)
+    parser.add_argument('-k3', type=float, default=50)
+    parser.add_argument('-alpha', type=float, default=0.8)
+    parser.add_argument('-beta', type=float, default=0.2)
+    parser.add_argument('-concepts_w', type=float, default=5)
     
 
 
