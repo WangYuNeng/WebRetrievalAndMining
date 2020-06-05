@@ -12,3 +12,7 @@
 # outputs
 *outputs/
 *model/
+
+# wandb
+*.API_KEY
+*wandb/

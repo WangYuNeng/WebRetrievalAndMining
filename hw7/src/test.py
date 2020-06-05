@@ -7,11 +7,11 @@ import torch
 from PIR_Model import PIR_Model
 from PIR_Dataset import PIR_Dataset
 
-
+train_file = "../dataset/train.csv"
 output_file = "../outputs/out.csv"
 dataset = PIR_Dataset(train_file)
-user_file = ["../model/user0.196863.pt", "../model/user0.199941.pt"]
-item_file = ["../model/item0.196863.pt", "../model/item0.199941.pt"]
+user_file = ["../model/user0.196863.pt", "../model/user0.199941.pt", "../model/user0.008831.pt"]
+item_file = ["../model/item0.196863.pt", "../model/item0.199941.pt", "../model/item0.008831.pt"]
 matrix = np.zeros((dataset.num_users, dataset.num_items))
 for f1, f2 in zip(user_file, item_file):
     matrix += torch.matmul(torch.load(f1), torch.load(f2)).cpu().detach().numpy()
