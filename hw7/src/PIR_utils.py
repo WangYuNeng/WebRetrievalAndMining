@@ -34,8 +34,7 @@ def calc_score(dataset, model):
             n_recom = 50
             AP = 0
             true_pos = 0
-            # use all pos (including test data) to calculate MAP (?)
-            n_pos = int((len(dataset.train_lists[i]) + len(dataset.valid_lists[i]))/0.89)
+            n_pos = len(golden_set)
             for i, idx in enumerate(rank[:n_recom]):
                 if idx in golden_set:
                     true_pos += 1

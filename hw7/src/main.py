@@ -31,6 +31,10 @@ if args.use_wandb:
     wandb.login(key=KEY)
     wandb.init(project="wm2020_pa2", config=vars(args))
 
+if args.num_topic >= 64:
+    torch.cuda.set_device(0)
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+
 train_file = "../dataset/train.csv"
 ITER = args.iter
 torch.manual_seed(args.seed)
