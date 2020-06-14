@@ -14,7 +14,8 @@ class BPR_Loss(torch.nn.Module):
     def forward(self, x, y):
         pos = x[:len(x)//2]
         neg = x[len(x)//2:]
-        return -torch.mean(self.m((pos-neg)))
+        loss = -torch.mean(self.m((torch.clamp(pos-neg, min=-20, max=20))))
+        return loss
 
 """
 Calculate F1/MAP score

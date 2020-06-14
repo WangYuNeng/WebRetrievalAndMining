@@ -40,7 +40,7 @@ class PIR_Dataset(Dataset):
         tot_lists = [list(map(int, item_str.split())) for item_str in df["ItemId"]]
         train_lists, valid_lists = [], []
         for l in tot_lists:
-            # shuffle(l)
+            shuffle(l)
             idx = int(len(l)*valid_split) + 1
             valid_lists.append(sorted(l[-idx:]))
             train_lists.append(sorted(l[:-idx]))
